@@ -1,0 +1,506 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Resta Binaria en Máquina de Turing</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: una sola columna de lectura, secciones separadas por líneas, y la cinta de la máquina como pieza central de la simulación. */
+:root{
+  --bg:#f4f6f9; --surface:#ffffff; --fg:#14202e; --muted:#566678; --line:#d5dce5;
+  --accent:#0a6a86; --accent-ink:#ffffff; --head:#c97800; --head-bg:#fff1d6;
+  --ok:#17794a; --bad:#b3312f; --cell:#eef2f7; --code-bg:#edf1f6;
+  --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --display:'IBM Plex Sans Condensed','IBM Plex Sans',system-ui,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e151e; --surface:#151e2a; --fg:#e5ecf4; --muted:#93a4b8; --line:#26354a;
+    --accent:#58c1df; --accent-ink:#06222c; --head:#ffb43a; --head-bg:#3a2a08;
+    --ok:#4cc88a; --bad:#ff7b78; --cell:#1b2736; --code-bg:#1a2534; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e151e; --surface:#151e2a; --fg:#e5ecf4; --muted:#93a4b8; --line:#26354a;
+  --accent:#58c1df; --accent-ink:#06222c; --head:#ffb43a; --head-bg:#3a2a08;
+  --ok:#4cc88a; --bad:#ff7b78; --cell:#1b2736; --code-bg:#1a2534; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:400 16px/1.6 var(--sans);margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:940px;margin:0 auto;padding-block:0 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+a{color:var(--accent)}
+code,.mono{font-family:var(--mono)}
+code{background:var(--code-bg);padding:1px 6px;border-radius:4px;font-size:.92em}
+sub{font-size:.7em;line-height:0}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* Navegación */
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+.nav-in{display:flex;gap:4px;overflow-x:auto;padding-block:8px;scrollbar-width:thin}
+.nav-in a{white-space:nowrap;text-decoration:none;color:var(--muted);font-size:.88rem;font-weight:500;padding:6px 10px;border-radius:6px}
+.nav-in a:hover{background:var(--code-bg);color:var(--fg)}
+.nav-in a.go{background:var(--accent);color:var(--accent-ink)}
+
+/* Encabezado */
+header{padding-block:40px 28px}
+.eyebrow{font:500 .78rem var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+h1{font:600 clamp(2rem,6vw,3.1rem)/1.05 var(--display);letter-spacing:-.01em;margin:0 0 14px;text-wrap:balance}
+.lead{font-size:1.1rem;max-width:62ch;margin:0 0 22px;color:var(--fg)}
+.demo{display:flex;flex-wrap:wrap;gap:18px 36px;align-items:flex-end}
+.demo figure{margin:0}
+.demo figcaption{font:500 .78rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.strip{display:flex;gap:4px}
+.strip span{width:38px;height:42px;display:grid;place-items:center;border:2px solid var(--line);background:var(--cell);border-radius:6px;font:600 1.15rem var(--mono)}
+.strip span.b{color:var(--muted);border-style:dashed}
+.note-hand{margin:22px 0 0;padding:10px 14px;border-left:4px solid var(--accent);background:var(--code-bg);max-width:70ch;font-size:.95rem}
+
+/* Secciones */
+section{padding-block:34px;border-top:1px solid var(--line);scroll-margin-top:64px}
+h2{font:600 1.7rem/1.15 var(--display);margin:0 0 6px;text-wrap:balance}
+h3{font:600 1.05rem/1.3 var(--sans);margin:26px 0 8px}
+.sub{color:var(--muted);margin:0 0 18px;max-width:68ch}
+p{max-width:72ch;margin:0 0 12px}
+ul,ol{max-width:72ch;padding-left:1.3em;margin:0 0 12px}
+li{margin-bottom:6px}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface);margin:10px 0 16px}
+table{border-collapse:collapse;width:100%;font-size:.93rem}
+th,td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .78rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);background:var(--code-bg);white-space:nowrap}
+tbody th{font:600 .95rem var(--mono);text-transform:none;letter-spacing:0;color:var(--fg);background:transparent}
+tbody th small{font:500 .7rem var(--sans);color:var(--muted);margin-left:4px}
+tr:last-child td,tr:last-child th{border-bottom:0}
+td.m,.dt td{font-family:var(--mono)}
+td.none{color:var(--muted);font-family:var(--mono)}
+.bad{color:var(--bad)} .ok{color:var(--ok)} .muted{color:var(--muted)}
+.formal{font:500 .98rem/1.9 var(--mono);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;overflow-x:auto;margin:10px 0 16px;white-space:pre}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.cols>*{min-width:0}
+.deriv{font-family:var(--mono);font-size:.95rem;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 16px}
+.deriv div{padding:2px 0}
+.deriv .rule{color:var(--muted);font-size:.82rem;margin-left:10px}
+.st{font-weight:600;color:var(--accent);margin:0 .22em}
+.hl td{background:var(--head-bg)}
+.flow{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;margin:12px 0 18px}
+.flow div{flex:1 1 150px;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:.9rem}
+.flow b{display:block;font:600 .74rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+
+/* Simulación */
+.sim-box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;margin-top:10px}
+.inputs{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label{font:500 .78rem var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+input[type=text]{font:500 1.1rem var(--mono);padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg);width:11ch;max-width:100%}
+input.wide{width:100%}
+button{font:600 .92rem var(--sans);padding:9px 14px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px;align-items:center}
+.chips span.l{font-size:.85rem;color:var(--muted)}
+.chips button{font:500 .85rem var(--mono);padding:5px 10px}
+.msg{min-height:1.4em;color:var(--bad);font-size:.9rem;margin:6px 0 0}
+.tape-scroll{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.tape{display:flex;gap:4px;padding:10px 12px 8px;min-width:max-content}
+.col{width:44px;text-align:center}
+.ptr{height:40px;font:600 .8rem/1.1 var(--mono);color:var(--head);display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding-bottom:3px}
+.cell{height:44px;display:grid;place-items:center;border:2px solid var(--line);background:var(--cell);font:600 1.25rem var(--mono);border-radius:6px}
+.cell.blank{color:var(--muted);font-weight:400}
+.col.head .cell{border-color:var(--head);background:var(--head-bg)}
+.idx{font:400 .7rem var(--mono);color:var(--muted);margin-top:3px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:6px 0 14px}
+.stats>div{min-width:0}
+.stats .k{font:500 .72rem var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stats .v{font:600 1.05rem var(--mono);overflow-wrap:anywhere}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.speed{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--muted);margin-left:auto}
+.speed input{width:110px}
+.result{margin-top:14px;padding:12px 14px;border-radius:8px;background:var(--code-bg);min-height:3.2em;font-size:.97rem}
+.result.okb{border-left:4px solid var(--ok)} .result.badb{border-left:4px solid var(--bad)}
+.hist{font:400 .85rem/1.7 var(--mono);max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px 12px;background:var(--bg);margin-top:8px}
+.hist .n{color:var(--muted);display:inline-block;min-width:3.2em}
+details summary{cursor:pointer;font-weight:600;margin-top:14px}
+pre.prompt{white-space:pre-wrap;font:400 .92rem/1.6 var(--mono);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;margin:8px 0}
+.checklist{list-style:none;padding:0}
+.checklist li{display:flex;gap:10px;align-items:flex-start}
+.checklist input{margin-top:6px;width:18px;height:18px;flex:none}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+@media (prefers-reduced-motion:no-preference){.cell{transition:border-color .15s,background .15s}}
+@media (max-width:520px){.speed{margin-left:0;width:100%}}
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">Máquinas de Turing · Autómata con simulación</p>
+  <h1>Resta binaria en una máquina de Turing</h1>
+  <p class="lead">La máquina lee dos números en binario separados por un blanco, los resta y deja el resultado en la cinta. Esta página tiene la descripción formal completa y un simulador que ejecuta la máquina paso a paso.</p>
+  <div class="demo">
+    <figure><figcaption>Cinta de entrada (5 − 3)</figcaption><div class="strip"><span>1</span><span>0</span><span>1</span><span class="b">□</span><span>1</span><span>1</span></div></figure>
+    <figure><figcaption>Cinta final (resultado 2)</figcaption><div class="strip"><span>0</span><span>1</span><span>0</span></div></figure>
+  </div>
+  <p class="note-hand">La rúbrica pide el documento del autómata escrito a mano. Puedes copiar a mano las secciones 2 a 7 y usar esta página para la simulación y el video.</p>
+</header>
+
+<nav aria-label="Secciones"><div class="nav-in">
+  <a href="#problema">1 Problema</a><a href="#formal">2 Descripción formal</a><a href="#lenguaje">3 Lenguaje</a><a href="#er">4 Expresión regular</a><a href="#gramatica">5 Gramática</a><a href="#cadenas">6 Cadenas e ID</a><a href="#algoritmo">7 Funcionamiento</a><a href="#simulacion" class="go">8 Simulación</a><a href="#video">9 Video</a>
+</div></nav>
+
+<section id="problema">
+  <h2>1. Problema y forma de la entrada</h2>
+  <p class="sub">Qué recibe la máquina y qué entrega.</p>
+  <ul>
+    <li>La cinta inicial tiene el número <b>A</b>, un blanco (<code>□</code>) y el número <b>B</b>. Ejemplo: <code>101□11</code>.</li>
+    <li>La máquina calcula <b>A − B</b> y entrega en la cinta final solamente el resultado, con la misma cantidad de dígitos que A. Para <code>101□11</code> (5 − 3) la cinta final es <code>010</code> (2).</li>
+    <li>La resta es entre números sin signo. Si A es menor que B el resultado sería negativo, y la máquina se detiene sin aceptar.</li>
+  </ul>
+</section>
+
+<section id="formal">
+  <h2>2. Descripción formal del autómata</h2>
+  <p class="sub">Máquina de Turing determinista de una cinta, definida por una séptupla.</p>
+  <div class="formal">M = (Q, Σ, Γ, δ, q₀, □, F)
+
+Q = { q₀, q₁, q₂, q₃, q₄, q₅, q₆, q₇, q_f }
+Σ = { 0, 1 }
+Γ = { 0, 1, □ }
+δ : Q × Γ → Q × Γ × { L, R }     (función parcial)
+q₀ = estado inicial
+□  = símbolo blanco
+F  = { q_f }</div>
+  <h3>Elementos y grados</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Elemento</th><th>Qué es</th><th>Valor</th></tr></thead>
+    <tbody>
+      <tr><td class="m">Q</td><td>Conjunto de estados</td><td>9 estados: |Q| = 9</td></tr>
+      <tr><td class="m">Σ</td><td>Alfabeto de entrada</td><td>2 símbolos: |Σ| = 2</td></tr>
+      <tr><td class="m">Γ</td><td>Alfabeto de la cinta (Σ más el blanco)</td><td>3 símbolos: |Γ| = 3</td></tr>
+      <tr><td class="m">δ</td><td>Función de transición</td><td>21 transiciones definidas de las 27 combinaciones de Q × Γ. Si no existe transición, la máquina se detiene.</td></tr>
+      <tr><td class="m">q₀</td><td>Estado inicial</td><td>q₀, con la cabeza sobre el primer dígito de A</td></tr>
+      <tr><td class="m">□</td><td>Símbolo blanco</td><td>Separa A y B, y es el contenido de toda celda vacía</td></tr>
+      <tr><td class="m">F</td><td>Estados de aceptación</td><td>{ q_f }: 1 estado. Rechaza quien se detiene en otro estado.</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Qué hace cada estado</h3>
+  <div class="scroll"><table id="statesTable"></table></div>
+  <h3>Tabla de transición</h3>
+  <p>Cada celda dice <code>(estado nuevo, símbolo que escribe, movimiento)</code>. L mueve la cabeza a la izquierda y R a la derecha. Una celda con — no tiene transición.</p>
+  <div class="scroll"><table id="deltaTable"></table></div>
+</section>
+
+<section id="lenguaje">
+  <h2>3. Lenguaje y alfabeto</h2>
+  <p class="sub">Escritura formal de los conjuntos que usa la máquina.</p>
+  <div class="formal">Σ = { 0, 1 }                      alfabeto de entrada
+Γ = Σ ∪ { □ }                    alfabeto de la cinta
+
+L_E  = { u □ v  |  u, v ∈ {0,1}⁺ }
+       cadenas con formato válido: dos números binarios separados por un blanco
+
+L(M) = { u □ v ∈ L_E  |  val(u) ≥ val(v) }
+       cadenas que la máquina acepta (la resta no es negativa)
+
+Salida: si u □ v ∈ L(M), la cinta final contiene r ∈ {0,1}^|u|
+        con val(r) = val(u) − val(v)</div>
+  <p>Aquí <code>val(w)</code> es el valor del número binario w y <code>{0,1}⁺</code> son las cadenas de 0 y 1 con al menos un dígito.</p>
+</section>
+
+<section id="er">
+  <h2>4. Expresión regular</h2>
+  <p class="sub">Escritura formal del formato de entrada, con + como unión.</p>
+  <div class="formal">ER de entrada:   (0+1)(0+1)* □ (0+1)(0+1)*
+
+ER de salida:    (0+1)(0+1)*</div>
+  <p>La expresión describe el lenguaje L_E: un número binario, un blanco y otro número binario. La condición val(u) ≥ val(v) no se puede escribir con una expresión regular, porque exige comparar el tamaño de dos números de largo cualquiera. Esa comparación la hace la máquina de Turing, y por eso se necesita una MT para este problema.</p>
+</section>
+
+<section id="gramatica">
+  <h2>5. Gramática y derivación</h2>
+  <p class="sub">Gramática regular (lineal por la derecha) que genera las cadenas de entrada de L_E.</p>
+  <div class="formal">G = (V, T, P, S)
+V = { S, Z, U }          variables
+T = { 0, 1, □ }          terminales
+
+P:   S → 0S | 1S | 0Z | 1Z      primer número A
+     Z → □U                     blanco separador
+     U → 0U | 1U | 0 | 1        segundo número B</div>
+  <p>La gramática da el formato de la entrada. La condición A ≥ B la comprueba la máquina al ejecutar.</p>
+  <h3>Derivación por la izquierda de las dos cadenas de prueba</h3>
+  <div class="cols">
+    <div class="deriv"><b>Cadena mínima: 0□0</b>
+      <div>S ⇒ 0Z <span class="rule">S → 0Z</span></div>
+      <div>⇒ 0□U <span class="rule">Z → □U</span></div>
+      <div>⇒ 0□0 <span class="rule">U → 0</span></div>
+    </div>
+    <div class="deriv"><b>Cadena promedio: 10□1</b>
+      <div>S ⇒ 1S <span class="rule">S → 1S</span></div>
+      <div>⇒ 10Z <span class="rule">S → 0Z</span></div>
+      <div>⇒ 10□U <span class="rule">Z → □U</span></div>
+      <div>⇒ 10□1 <span class="rule">U → 1</span></div>
+    </div>
+  </div>
+</section>
+
+<section id="cadenas">
+  <h2>6. Cadenas aceptadas y descripción instantánea (ID)</h2>
+  <p class="sub">Evaluación de la cadena mínima y de una de tamaño promedio.</p>
+  <p>Una descripción instantánea se escribe <code>α q β</code>: el contenido de la cinta, con el estado q puesto justo antes del símbolo que lee la cabeza. El símbolo <code>⊢</code> significa "pasa en un paso a" y <code>⊢*</code> significa "pasa en cero o más pasos a". Las dos cadenas terminan en q<sub>f</sub>, por lo que son aceptadas.</p>
+  <h3>Cadena mínima: 0□0 (0 − 0)</h3>
+  <p class="mono" id="sum1"></p>
+  <div class="scroll"><table class="dt" id="trace1"></table></div>
+  <h3>Cadena promedio: 10□1 (2 − 1)</h3>
+  <p class="mono" id="sum2"></p>
+  <div class="scroll"><table class="dt" id="trace2"></table></div>
+</section>
+
+<section id="algoritmo">
+  <h2>7. Funcionamiento de la máquina</h2>
+  <p class="sub">Idea: restar A − B es restar 1 a A y 1 a B, y repetirlo hasta que B llegue a cero.</p>
+  <div class="flow">
+    <div><b>Paso 1</b>q₀ lleva la cabeza hasta el blanco separador.</div>
+    <div><b>Paso 2</b>q₁ revisa B. Si todo B son ceros, pasa al paso 6.</div>
+    <div><b>Paso 3</b>q₂ y q₃ restan 1 a B desde su último dígito.</div>
+    <div><b>Paso 4</b>q₄ y q₅ restan 1 a A. Después se repite desde el paso 1.</div>
+    <div><b>Paso 6</b>q₆ borra B y q₇ vuelve al inicio del resultado. Acepta en q_f.</div>
+  </div>
+  <ul>
+    <li><b>Restar 1 en binario.</b> De derecha a izquierda, cada 0 se cambia por 1 (préstamo) hasta encontrar el primer 1, que se cambia por 0. Ese es el trabajo de q₃ en B y de q₅ en A.</li>
+    <li><b>Rechazo.</b> Si al restar 1 a A la cabeza se sale por la izquierda sin encontrar un 1, A era cero mientras B todavía no lo era. Entonces A &lt; B y la máquina se detiene en q₅ sin transición.</li>
+    <li><b>Ejemplo 10□1.</b> En la primera vuelta B pasa de 1 a 0 y A pasa de 10 a 01. En la segunda revisión B ya es 0, se borra, y la cinta final queda <code>01</code>, que es 2 − 1 = 1.</li>
+    <li><b>Hallazgos.</b> Probé la máquina con las 3 844 combinaciones de A y B de 1 a 5 dígitos: aceptó todas las restas válidas con el resultado correcto y rechazó todas las que daban negativo. El número de pasos crece con el valor de B, porque el ciclo se repite val(B) veces: 0□0 usa 8 pasos, 10□1 usa 18 y 101□11 usa 42.</li>
+  </ul>
+</section>
+
+<section id="simulacion">
+  <h2>8. Simulación</h2>
+  <p class="sub">Escribe A y B, pulsa Cargar y avanza paso a paso o deja que corra. La celda con borde naranja es la que lee la cabeza.</p>
+  <div class="sim-box">
+    <div class="inputs">
+      <div class="field"><label for="inA">A (minuendo)</label><input type="text" id="inA" value="101" maxlength="8" inputmode="numeric" autocomplete="off"></div>
+      <div class="field"><label for="inB">B (sustraendo)</label><input type="text" id="inB" value="11" maxlength="8" inputmode="numeric" autocomplete="off"></div>
+      <button class="primary" id="btnLoad">Cargar</button>
+    </div>
+    <div class="chips"><span class="l">Ejemplos:</span>
+      <button data-a="0" data-b="0">0□0 mínima</button>
+      <button data-a="10" data-b="1">10□1 promedio</button>
+      <button data-a="1010" data-b="0110">1010□0110</button>
+      <button data-a="1011" data-b="0011">1011□0011</button>
+      <button data-a="1" data-b="10">1□10 se rechaza</button>
+    </div>
+    <div class="msg" id="msg" role="alert"></div>
+    <div class="tape-scroll" id="tapeScroll"><div class="tape" id="tape" aria-label="Cinta de la máquina"></div></div>
+    <div class="stats">
+      <div><div class="k">Estado</div><div class="v" id="vState">q0</div></div>
+      <div><div class="k">Paso</div><div class="v" id="vStep">0</div></div>
+      <div><div class="k">Transición aplicada</div><div class="v" id="vTrans">—</div></div>
+      <div><div class="k">En decimal</div><div class="v" id="vDec">—</div></div>
+    </div>
+    <div class="ctrl">
+      <button class="primary" id="btnStep">Paso</button>
+      <button id="btnPlay">Ejecutar</button>
+      <button id="btnAll">Resolver ya</button>
+      <button id="btnReset">Reiniciar</button>
+      <div class="speed"><label for="speed">Velocidad</label><input type="range" id="speed" min="1" max="10" value="5"></div>
+    </div>
+    <div class="result" id="result" aria-live="polite">Pulsa Paso o Ejecutar para empezar.</div>
+    <details open><summary>Historial de descripciones instantáneas (ID)</summary><div class="hist" id="hist"></div></details>
+  </div>
+  <details>
+    <summary>Prompt usado para generar esta página</summary>
+    <pre class="prompt" id="promptText">Diseña una Máquina de Turing que lea dos palabras en código binario separadas por un blanco y realice la resta de ambas, dejando el resultado en la cinta final. Entrega: descripción formal (séptupla, grados y tabla de transición), lenguaje y alfabeto, expresión regular, gramática con una prueba de derivación, descripción instantánea (ID) de la cadena mínima y de una de tamaño promedio, explicación del funcionamiento, y una página web que muestre todo esto con una simulación paso a paso.</pre>
+    <button id="btnCopy">Copiar prompt</button>
+  </details>
+</section>
+
+<section id="video">
+  <h2>9. Video de la entrega</h2>
+  <p class="sub">Esta página no puede reproducir videos de otros sitios dentro de ella, así que el enlace se abre en una pestaña nueva.</p>
+  <div class="field" style="max-width:640px"><label for="videoUrl">Enlace del video (YouTube, Drive u otro)</label>
+    <input type="text" class="wide" id="videoUrl" placeholder="https://..." autocomplete="off"></div>
+  <div class="row" style="margin-top:10px"><button class="primary" id="btnVideo">Guardar enlace</button><a id="videoLink" href="#video" target="_blank" rel="noopener" hidden>Abrir el video ↗</a></div>
+  <p class="muted" style="font-size:.88rem;margin-top:10px">El enlace se guarda solo en este navegador. Para que el catedrático lo vea al abrir la página, el enlace debe quedar escrito dentro de la página publicada.</p>
+  <h3>Qué debe aparecer en el video (según la rúbrica)</h3>
+  <ul class="checklist">
+    <li><input type="checkbox" id="c1"><label for="c1">Cámara encendida durante todo el video.</label></li>
+    <li><input type="checkbox" id="c2"><label for="c2">Explicar cada elemento de la séptupla y la tabla de transición (sección 2).</label></li>
+    <li><input type="checkbox" id="c3"><label for="c3">Explicar el algoritmo, la cinta y las ID de las dos cadenas (secciones 6 y 7).</label></li>
+    <li><input type="checkbox" id="c4"><label for="c4">Mostrar la simulación funcionando y mostrar el prompt usado (sección 8).</label></li>
+    <li><input type="checkbox" id="c5"><label for="c5">Mencionar los hallazgos: la prueba con 3 844 casos, el rechazo cuando A &lt; B y el crecimiento de los pasos con el valor de B.</label></li>
+  </ul>
+</section>
+</div>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+const disp=s=>s==='_'?'□':s;
+const stH=s=>s==='qf'?'q<sub>f</sub>':'q<sub>'+s.slice(1)+'</sub>';
+
+// TM-START
+const T={
+ q0:{'0':['q0','0','R'],'1':['q0','1','R'],'_':['q1','_','R']},
+ q1:{'0':['q1','0','R'],'1':['q2','1','R'],'_':['q6','_','L']},
+ q2:{'0':['q2','0','R'],'1':['q2','1','R'],'_':['q3','_','L']},
+ q3:{'0':['q3','1','L'],'1':['q4','0','L']},
+ q4:{'0':['q4','0','L'],'1':['q4','1','L'],'_':['q5','_','L']},
+ q5:{'0':['q5','1','L'],'1':['q0','0','R']},
+ q6:{'0':['q6','_','L'],'_':['q7','_','L']},
+ q7:{'0':['q7','0','L'],'1':['q7','1','L'],'_':['qf','_','R']}
+};
+function newM(a,b){const tape=new Map();const s=a+'_'+b;for(let i=0;i<s.length;i++){if(s[i]!=='_')tape.set(i,s[i]);}return {tape,head:0,state:'q0',steps:0,status:'run',last:null};}
+function symOf(m){return m.tape.has(m.head)?m.tape.get(m.head):'_';}
+function stepM(m){
+  if(m.state==='qf'){m.status='accept';return false;}
+  const s=symOf(m);const row=T[m.state];const t=row&&row[s];
+  if(!t){m.status='reject';return false;}
+  m.last={from:m.state,read:s,to:t[0],write:t[1],move:t[2]};
+  if(t[1]==='_')m.tape.delete(m.head);else m.tape.set(m.head,t[1]);
+  m.head+=t[2]==='R'?1:-1;m.state=t[0];m.steps++;
+  if(m.state==='qf')m.status='accept';
+  return true;
+}
+function tapeString(m){const k=[...m.tape.keys()].sort((x,y)=>x-y);if(!k.length)return '';let s='';for(let i=k[0];i<=k[k.length-1];i++)s+=m.tape.has(i)?m.tape.get(i):'□';return s;}
+// TM-END
+
+function idOf(m){
+  const keys=[...m.tape.keys()];keys.push(m.head);
+  const lo=Math.min(...keys),hi=Math.max(...keys);let txt='';
+  for(let i=lo;i<=hi;i++)txt+=m.tape.has(i)?m.tape.get(i):'□';
+  const p=m.head-lo;return {left:txt.slice(0,p),state:m.state,right:txt.slice(p)};
+}
+const idH=id=>esc(id.left)+'<span class="st">'+stH(id.state)+'</span>'+esc(id.right);
+const transH=l=>'δ('+stH(l.from)+', '+disp(l.read)+') = ('+stH(l.to)+', '+disp(l.write)+', '+l.move+')';
+
+/* Tablas de la descripción formal */
+const STATES=[
+ ['q0','Estado inicial. Recorre A hacia la derecha hasta llegar al blanco separador.'],
+ ['q1','Recorre B buscando un 1. Si encuentra uno, B todavía no es cero.'],
+ ['q2','Encontró un 1 en B. Avanza hasta el final de B.'],
+ ['q3','Resta 1 a B desde la derecha: cada 0 pasa a 1 (préstamo) hasta que un 1 pasa a 0.'],
+ ['q4','Regresa por B hasta el blanco separador y entra a A.'],
+ ['q5','Resta 1 a A igual que q3. Si A se acaba sin encontrar un 1, A era 0 y se rechaza.'],
+ ['q6','B es todo ceros. Borra B de derecha a izquierda.'],
+ ['q7','Regresa por A hasta su primer dígito, que queda como inicio del resultado.'],
+ ['qf','Estado final: la máquina acepta.']
+];
+$('statesTable').innerHTML='<thead><tr><th>Estado</th><th>Función</th></tr></thead><tbody>'+
+  STATES.map(([s,d])=>'<tr><th scope="row">'+stH(s)+'</th><td>'+d+'</td></tr>').join('')+'</tbody>';
+(function(){
+  const cols=['0','1','_'];
+  let h='<thead><tr><th>Estado</th><th>Lee 0</th><th>Lee 1</th><th>Lee □</th></tr></thead><tbody>';
+  STATES.forEach(([s])=>{
+    h+='<tr><th scope="row">'+stH(s)+(s==='q0'?'<small>inicial</small>':'')+(s==='qf'?'<small>final</small>':'')+'</th>';
+    cols.forEach(c=>{
+      const t=T[s]&&T[s][c];
+      if(t)h+='<td class="m">('+stH(t[0])+', '+disp(t[1])+', '+t[2]+')</td>';
+      else if(s==='q5'&&c==='_')h+='<td class="none bad">— rechaza</td>';
+      else h+='<td class="none">—</td>';
+    });
+    h+='</tr>';
+  });
+  $('deltaTable').innerHTML=h+'</tbody>';
+})();
+
+/* Trazas de las dos cadenas */
+function trace(a,b){const m=newM(a,b);const rows=[{n:0,id:idOf(m),last:null}];let g=0;while(stepM(m)&&g++<5000)rows.push({n:m.steps,id:idOf(m),last:m.last});return {rows,m};}
+function fillTrace(tid,sid,a,b){
+  const {rows,m}=trace(a,b);
+  $(tid).innerHTML='<thead><tr><th>Paso</th><th>Descripción instantánea</th><th>Transición aplicada</th></tr></thead><tbody>'+
+    rows.map((r,i)=>'<tr'+(i===rows.length-1?' class="hl"':'')+'><td>'+r.n+'</td><td>'+(r.n?'⊢ ':'')+idH(r.id)+'</td><td>'+(r.last?transH(r.last):'ID inicial')+'</td></tr>').join('')+'</tbody>';
+  $(sid).innerHTML=idH(rows[0].id)+' ⊢* '+idH(rows[rows.length-1].id)+' &nbsp;('+m.steps+' pasos, '+(m.status==='accept'?'aceptada':'rechazada')+')';
+}
+fillTrace('trace1','sum1','0','0');
+fillTrace('trace2','sum2','10','1');
+
+/* Simulador */
+let m=null,a0='101',b0='11',playing=false,timer=null,hist=[];
+const DELAYS=[900,600,420,280,180,110,70,40,20,8];
+const delay=()=>DELAYS[Math.max(1,Math.min(10,+$('speed').value))-1];
+
+function renderTape(){
+  const keys=[...m.tape.keys()];keys.push(m.head);
+  let lo=Math.min(...keys)-2,hi=Math.max(...keys)+2;if(hi-lo<11)hi=lo+11;
+  let h='';
+  for(let i=lo;i<=hi;i++){
+    const s=m.tape.has(i)?m.tape.get(i):'_';const isH=i===m.head;
+    h+='<div class="col'+(isH?' head':'')+'" data-i="'+i+'"><div class="ptr">'+(isH?'<span>▼</span><span>'+m.state+'</span>':'')+'</div><div class="cell'+(s==='_'?' blank':'')+'">'+disp(s)+'</div><div class="idx">'+i+'</div></div>';
+  }
+  $('tape').innerHTML=h;
+  const hc=$('tape').querySelector('.col.head'),sc=$('tapeScroll');
+  if(hc)sc.scrollLeft=hc.offsetLeft-sc.clientWidth/2+hc.offsetWidth/2;
+}
+function renderHist(){
+  $('hist').innerHTML=hist.map(x=>'<div><span class="n">'+x.n+'.</span>'+(x.n?'⊢ ':'')+x.html+'</div>').join('');
+  $('hist').scrollTop=$('hist').scrollHeight;
+}
+function pushHist(){hist.push({n:m.steps,html:idH(idOf(m))});if(hist.length>300)hist.shift();}
+function update(){
+  renderTape();renderHist();
+  $('vState').innerHTML=stH(m.state);
+  $('vStep').textContent=m.steps;
+  $('vTrans').innerHTML=m.last?transH(m.last):'—';
+  const va=parseInt(a0,2),vb=parseInt(b0,2);
+  $('vDec').textContent=va+' − '+vb+' = '+(va-vb);
+  const r=$('result');
+  if(m.status==='accept'){
+    const res=tapeString(m);const vr=parseInt(res,2);
+    const okc=vr===va-vb;
+    r.className='result okb';
+    r.innerHTML='<b class="ok">Aceptada.</b> Cinta final: <code>'+esc(res)+'</code>. En decimal, '+va+' − '+vb+' = '+vr+(okc?' ✓ coincide con la resta real.':' ✗ no coincide con la resta real.')+'<br>Operación realizada en binario: <code>'+esc(a0)+'-'+esc(b0)+'='+esc(res)+'</code>';
+  }else if(m.status==='reject'){
+    r.className='result badb';
+    r.innerHTML='<b class="bad">Rechazada.</b> A ('+va+') es menor que B ('+vb+'), así que la resta sería negativa. La máquina se detuvo en '+stH(m.state)+' porque no hay transición para el símbolo que lee.';
+  }else{
+    r.className='result';r.textContent='En ejecución. Cada paso aplica una transición de la tabla.';
+  }
+  const done=m.status!=='run';
+  $('btnStep').disabled=done;$('btnAll').disabled=done;$('btnPlay').disabled=done;
+}
+function stopPlay(){playing=false;clearTimeout(timer);$('btnPlay').textContent='Ejecutar';}
+function load(a,b){
+  stopPlay();a0=a;b0=b;m=newM(a,b);hist=[];pushHist();
+  $('result').className='result';$('result').textContent='Pulsa Paso o Ejecutar para empezar.';
+  update();
+  $('result').textContent='Pulsa Paso o Ejecutar para empezar.';
+}
+function doStep(){const ok=stepM(m);if(ok)pushHist();update();return ok;}
+function tick(){if(!playing)return;if(!doStep()){stopPlay();return;}timer=setTimeout(tick,delay());}
+
+function readInputs(){
+  const a=$('inA').value.trim(),b=$('inB').value.trim();
+  if(!/^[01]{1,8}$/.test(a)||!/^[01]{1,8}$/.test(b)){$('msg').textContent='Escribe solo 0 y 1, de 1 a 8 dígitos, en A y en B.';return null;}
+  $('msg').textContent='';return [a,b];
+}
+['inA','inB'].forEach(id=>$(id).addEventListener('input',e=>{e.target.value=e.target.value.replace(/[^01]/g,'');}));
+$('btnLoad').addEventListener('click',()=>{const v=readInputs();if(v)load(v[0],v[1]);});
+$('btnReset').addEventListener('click',()=>load(a0,b0));
+$('btnStep').addEventListener('click',()=>{stopPlay();doStep();});
+$('btnPlay').addEventListener('click',()=>{
+  if(playing){stopPlay();return;}
+  playing=true;$('btnPlay').textContent='Pausa';tick();
+});
+$('btnAll').addEventListener('click',()=>{
+  stopPlay();let g=0;while(m.status==='run'&&g++<500000){if(stepM(m))pushHist();}
+  update();
+});
+document.querySelectorAll('.chips button').forEach(b=>b.addEventListener('click',()=>{
+  $('inA').value=b.dataset.a;$('inB').value=b.dataset.b;$('msg').textContent='';load(b.dataset.a,b.dataset.b);
+}));
+$('speed').addEventListener('input',()=>{});
+
+/* Prompt y video */
+$('btnCopy').addEventListener('click',()=>{
+  const btn=$('btnCopy'),pre=$('promptText'),text=pre.textContent;
+  const fallback=()=>{const r=document.createRange();r.selectNodeContents(pre);const s=window.getSelection();s.removeAllRanges();s.addRange(r);btn.textContent='Texto seleccionado: usa Ctrl+C';};
+  try{navigator.clipboard.writeText(text).then(()=>{btn.textContent='Copiado';setTimeout(()=>{btn.textContent='Copiar prompt';},1500);},fallback);}catch(e){fallback();}
+});
+function showVideo(u){const a=$('videoLink');if(/^https:\/\//.test(u)){a.href=u;a.hidden=false;}else{a.hidden=true;}}
+try{const u=localStorage.getItem('mt-video');if(u){$('videoUrl').value=u;showVideo(u);}}catch(e){}
+$('btnVideo').addEventListener('click',()=>{
+  const u=$('videoUrl').value.trim();showVideo(u);
+  try{localStorage.setItem('mt-video',u);}catch(e){}
+});
+
+load('101','11');
+})();
+</script>
+
+</body></html>
